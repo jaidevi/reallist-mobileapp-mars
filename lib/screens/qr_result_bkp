@@ -1,0 +1,103 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
+import 'package:reallist/controllers/qr_result_controller.dart';
+import 'package:reallist/utils/helper.dart';
+
+import '../utils/app_colors.dart';
+
+class QrResult extends StatelessWidget {
+  final qrResultController = Get.put(QrResultController());
+  QrResult({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    qrResultController.receiveData(Get.arguments);
+    //qrResultController.getCheckListForm();
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        elevation: 2,
+        backgroundColor: AppColors.primary,
+        title: const Text("Real List Form"),
+      ),
+      body: Center(
+        child: Obx(
+          () => qrResultController.isLoading.isFalse
+              ? qrResultController.checkListModel != null
+                  ? ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount:
+                          qrResultController.checkListModel!.data!.length,
+                      itemBuilder: (context, index) {
+                        var arrData =
+                            qrResultController.checkListModel!.data![index];
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                              top: 8.0, left: 8.0, right: 8.0),
+                          child: InkWell(
+                            onTap: () => {
+                              print(
+                                  "form id ----------> ${arrData.checklist!.id}"),
+                              qrResultController
+                                  .getFormBrow(arrData.checklist!.id)
+                            },
+                            child: Card(
+                              elevation: 5.0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5.0),
+                              ),
+                              child: ListTile(
+                                leading: const Icon(
+                                    Icons.medical_information_outlined),
+                                title: Text(
+                                  "${arrData.checklist!.title}",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.70,
+                      width: MediaQuery.of(context).size.width * 0.70,
+                      child: Lottie.asset("assets/lottie/empty.json"),
+                    ))
+              : Helper().loadingProgressBar(),
+        ),
+      ),
+    );
+  }
+
+  getFormDynamic(widgetName) {
+    print("-------------> widget name ------> $widgetName");
+    if (widgetName["type"] == 'radio-group') {
+      return ListView.builder(
+        itemCount: widgetName["values"].length,
+        itemBuilder: (context, index) {
+          var extData = widgetName["values"][index];
+          print("-----------> ${extData}");
+          var check = false;
+          return GetBuilder(
+            init: qrResultController,
+            builder: (_) => CheckboxListTile(
+              value: check,
+              onChanged: (bool? value) {
+                print("before change value -----> $check");
+                check = value!;
+                print("after change value -------> $check");
+                qrResultController.update();
+              },
+              title: Text(extData["label"]),
+            ),
+          );
+        },
+      );
+    }
+  }
+}
